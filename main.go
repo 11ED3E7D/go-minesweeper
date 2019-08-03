@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"math/rand"
 	"strings"
 )
 
@@ -27,10 +28,24 @@ func initMinefield(sizeX, sizeY int16) [][]Box {
 	for i := range field {
 		field[i] = make([]Box, sizeX)
 		for j := range field[i] {
-			field[i][j] = Box{}
+			field[i][j] = genBox()
 		}
 	}
 	return field
+}
+
+func genBox() Box {
+	if determineBomb() {
+		return Box{true, 0, 1}
+	}
+	return Box{}
+}
+
+func determineBomb() bool {
+	min := 0
+	max := 100
+	threshold := 50
+	return (rand.Intn(max-min) + min) < threshold
 }
 
 func printMinefield(field [][]Box) {
@@ -52,7 +67,7 @@ func printMinefield(field [][]Box) {
 			case i == -1:
 				fmt.Printf("%v_ ", strings.Repeat(" ", xLen))
 			case i >= 0:
-				fmt.Printf(" %v%d ", strings.Repeat(" ", xLen-numOfDigits(int(field[i][j].value))), field[i][j].neighbouringBombs)
+				fmt.Printf(" %v%d ", strings.Repeat(" ", xLen-numOfDigits(int(field[i][j].value))), field[i][j].value)
 			}
 		}
 		fmt.Println()
