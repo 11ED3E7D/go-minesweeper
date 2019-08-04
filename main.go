@@ -126,12 +126,6 @@ func checkSurroundings(field [][]Box, y, x int, box *Box) {
 		}
 	}
 	box.neighbouringBombs = bombCount
-	// Values under hidden boxes
-	// if box.hasBomb {
-	// 	box.value = `X`
-	// } else {
-	// 	box.value = fmt.Sprintf("%d", bombCount)
-	// }
 }
 
 func genBox() Box {
