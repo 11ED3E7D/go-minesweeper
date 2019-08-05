@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"math/rand"
 	"os"
+	"runtime"
 	"strconv"
 	"strings"
 )
@@ -30,7 +31,12 @@ func main() {
 		reader := bufio.NewReader(os.Stdin)
 		fmt.Print("Command > ")
 		input, _ := reader.ReadString('\n')
-		input = strings.Replace(input, "\r\n", "", -1)
+		switch os := runtime.GOOS; os {
+		case "windows":
+			input = strings.Replace(input, "\r\n", "", -1)
+		default:
+			input = strings.Replace(input, "\n", "", -1)
+		}
 		args := strings.Split(input, " ")
 		if len(args) > 0 {
 			input = args[0]
