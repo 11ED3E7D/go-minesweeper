@@ -88,7 +88,7 @@ func main() {
 			gameOver = false
 			fmt.Println(" =============== New Game =============== ")
 		case "size":
-			if len(args) == 2 && !gameOver {
+			if len(args) == 2 {
 				y, err0 := strconv.ParseInt(args[0], 10, 64)
 				if err0 == nil && y > 0 {
 					x, err1 := strconv.ParseInt(args[1], 10, 64)
