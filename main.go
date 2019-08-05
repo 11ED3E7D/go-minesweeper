@@ -98,6 +98,7 @@ func main() {
 						mineField = initMinefield(sizeX, sizeY)
 						printMinefield(mineField)
 						fmt.Println(" =============== New Game =============== ")
+						gameOver = false
 					}
 				}
 			}
