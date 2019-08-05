@@ -15,17 +15,18 @@ type Box struct {
 	value             byte
 }
 
-var sizeX, sizeY, numOfBombs uint64
+var sizeX, sizeY, numOfBombs int
 var mineField [][]Box
 
 func main() {
 	gameOver := false
+	quitGame := false
 	fmt.Println("Hello, world")
 	sizeX, sizeY = 25, 25
 	mineField = initMinefield(sizeX, sizeY)
 	fmt.Println()
 	printMinefield(mineField)
-	for !gameOver {
+	for !quitGame {
 		reader := bufio.NewReader(os.Stdin)
 		fmt.Print("Command > ")
 		input, _ := reader.ReadString('\n')
@@ -40,14 +41,29 @@ func main() {
 			printHelp()
 		case "quit":
 			fmt.Println("quiting game...")
-			gameOver = true
+			quitGame = true
 		case "peek":
-			if len(args) == 2 {
-				y, err0 := strconv.ParseUint(args[0], 10, 64)
-				if err0 == nil && y < (sizeY-1) {
-					x, err1 := strconv.ParseUint(args[1], 10, 64)
-					if err1 == nil && x < (sizeX-1) {
-						peek(mineField, y, x) // y and then x
+			if len(args) == 2 && !gameOver {
+				y, err0 := strconv.ParseInt(args[0], 10, 64)
+				if err0 == nil && int(y) < sizeY {
+					x, err1 := strconv.ParseInt(args[1], 10, 64)
+					if err1 == nil && int(x) < sizeX {
+						gameOver = peek(mineField, int(y), int(x)) // y and then x
+					}
+				}
+			}
+			printMinefield(mineField)
+		case "mark":
+			if len(args) == 2 && !gameOver {
+				y, err0 := strconv.ParseInt(args[0], 10, 64)
+				if err0 == nil && int(y) < sizeY {
+					x, err1 := strconv.ParseInt(args[1], 10, 64)
+					if err1 == nil && int(x) < sizeX {
+						if mineField[y][x].value == '#' {
+							mineField[y][x].value = 'O'
+						} else {
+							mineField[y][x].value = '#'
+						}
 					}
 				}
 			}
@@ -55,7 +71,7 @@ func main() {
 		case "peekAll":
 			for i := range mineField {
 				for j := range mineField[i] {
-					peek(mineField, uint64(i), uint64(j))
+					peek(mineField, int(i), int(j))
 				}
 			}
 			printMinefield(mineField)
@@ -69,33 +85,80 @@ func main() {
 		case "new":
 			mineField = initMinefield(sizeX, sizeY)
 			printMinefield(mineField)
+			gameOver = false
+			fmt.Println(" =============== New Game =============== ")
+		case "size":
+			if len(args) == 2 && !gameOver {
+				y, err0 := strconv.ParseInt(args[0], 10, 64)
+				if err0 == nil && y > 0 {
+					x, err1 := strconv.ParseInt(args[1], 10, 64)
+					if err1 == nil && x > 0 {
+						sizeX = int(x)
+						sizeY = int(y)
+						mineField = initMinefield(sizeX, sizeY)
+						printMinefield(mineField)
+						fmt.Println(" =============== New Game =============== ")
+					}
+				}
+			}
 		default:
 			printHelp()
+		}
+		if gameOver {
+			fmt.Println(" =============== Game Over =============== ")
 		}
 	}
 }
 
-func peek(field [][]Box, y uint64, x uint64) {
-	if field[y][x].hasBomb {
+// Flood-fill (node, target-color, replacement-color):
+//  1. If target-color is equal to replacement-color, return.
+//  2. ElseIf the color of node is not equal to target-color, return.
+//  3. Else Set the color of node to replacement-color.
+//  4. Perform Flood-fill (one step to the south of node, target-color, replacement-color).
+//     Perform Flood-fill (one step to the north of node, target-color, replacement-color).
+//     Perform Flood-fill (one step to the west of node, target-color, replacement-color).
+//     Perform Flood-fill (one step to the east of node, target-color, replacement-color).
+//  5. Return.
+func peek(field [][]Box, y int, x int) bool {
+	if field[y][x].value == ' ' {
+		return false
+	} else if field[y][x].hasBomb {
 		field[y][x].value = 'X'
-	} else if field[y][x].neighbouringBombs == 0 {
-		field[y][x].value = ' '
-	} else {
+		return true
+	} else if field[y][x].neighbouringBombs > 0 {
+		// Add 48 to get ascii number. This is fine as neighbouring bombs is <= 8
 		field[y][x].value = field[y][x].neighbouringBombs + 48
+	} else {
+		field[y][x].value = ' '
+		if y+1 < len(field) {
+			peek(field, y+1, x)
+		}
+		if y-1 >= 0 {
+			peek(field, y-1, x)
+		}
+		if x-1 >= 0 {
+			peek(field, y, x-1)
+		}
+		if x+1 < len(field[0]) {
+			peek(field, y, x+1)
+		}
 	}
+	return false
 }
 
 func printHelp() {
 	fmt.Println("Commands:")
 	fmt.Println("  help - show this menu")
 	fmt.Println("  quit - quit the game")
-	fmt.Println("  peek <y> <x> - uncovers the box at that location")
+	fmt.Println("  peek <y> <x> - uncovers the box at that position")
+	fmt.Println("  mark <y> <x> - mark position as bomb")
 	fmt.Println("  peekAll - uncover all boxes")
 	fmt.Println("  hideAll - covers all boxes")
 	fmt.Println("  new  - creates a new minefield")
+	fmt.Println("  size <height> <width> - Sets the new size of field and creates new game")
 }
 
-func initMinefield(sizeX, sizeY uint64) [][]Box {
+func initMinefield(sizeX, sizeY int) [][]Box {
 	field := make([][]Box, sizeY)
 	// Decide where all the bombs will be
 	for i := range field {
@@ -113,6 +176,7 @@ func initMinefield(sizeX, sizeY uint64) [][]Box {
 	return field
 }
 
+// Used to set box's neighbouring bomb counters
 func checkSurroundings(field [][]Box, y, x int, box *Box) {
 	var bombCount byte = 0
 	for i := -1; i <= 1; i++ {
