@@ -15,14 +15,14 @@ type Box struct {
 	value             byte
 }
 
-var sizeX, sizeY, numOfBombs int
+var sizeX, sizeY, numOfBombs, threshold int
 var mineField [][]Box
 
 func main() {
 	gameOver := false
 	quitGame := false
 	fmt.Println("Hello, world")
-	sizeX, sizeY = 25, 25
+	sizeX, sizeY, threshold = 25, 25, 10
 	mineField = initMinefield(sizeX, sizeY)
 	fmt.Println()
 	printMinefield(mineField)
@@ -101,13 +101,34 @@ func main() {
 					}
 				}
 			}
+		case "threshold":
+			if len(args) == 1 {
+				num, err := strconv.ParseInt(args[0], 10, 64)
+				if err == nil && num >= 0 && num <= 100 {
+					threshold = int(num)
+				}
+			}
 		default:
 			printHelp()
 		}
 		if gameOver {
 			fmt.Println(" =============== Game Over =============== ")
+		} else if checkWin(mineField) {
+			fmt.Println(" =============== Winner! ==============")
 		}
 	}
+}
+
+func checkWin(field [][]Box) bool {
+	win := true
+	for i := range field {
+		for j := range field[i] {
+			if field[i][j].hasBomb && field[i][j].value != '#' {
+				return false
+			}
+		}
+	}
+	return win
 }
 
 // Flood-fill (node, target-color, replacement-color):
@@ -156,6 +177,7 @@ func printHelp() {
 	fmt.Println("  hideAll - covers all boxes")
 	fmt.Println("  new  - creates a new minefield")
 	fmt.Println("  size <height> <width> - Sets the new size of field and creates new game")
+	fmt.Println("  threshold <num: 0 - 100> - Changes the probability of bombs being placed")
 }
 
 func initMinefield(sizeX, sizeY int) [][]Box {
@@ -203,7 +225,7 @@ func genBox() Box {
 func determineBomb() bool {
 	min := 0
 	max := 100
-	threshold := 10
+	threshold := threshold
 	return (rand.Intn(max-min) + min) < threshold
 }
 
