@@ -130,7 +130,7 @@ func checkWin(field [][]Box) bool {
 	win := true
 	for i := range field {
 		for j := range field[i] {
-			if field[i][j].hasBomb && field[i][j].value != '#' {
+			if (field[i][j].hasBomb && field[i][j].value != '#') || (!field[i][j].hasBomb && field[i][j].value == '#') {
 				return false
 			}
 		}
